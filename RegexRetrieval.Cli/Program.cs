@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using RegexRetrieval.Queries;
+using RegexRetrieval.Queries.Tokenizers;
 
 namespace RegexRetrieval.Cli
 {
