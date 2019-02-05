@@ -17,15 +17,16 @@ namespace RegexRetrieval.Queries
         /// </summary>
         public DefaultAction Default { get; set; } = (state, s, i) => throw new InvalidOperationException();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="regex">
-        /// <para>
-        /// Hint: Use <c>\G</c> to avoid unnecessary matches.
-        /// </para>
-        /// </param>
-        /// <param name="action"></param>
+        public void AddCase(Regex regex, SimpleCaseAction action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            AddCase(regex, (s, str, m ) =>
+            {
+                action(s, str, m);
+                return m.Length;
+            });
+        }
         public void AddCase(Regex regex, CaseAction action)
         {
             if (regex == null) throw new ArgumentNullException(nameof(regex));
@@ -61,9 +62,10 @@ namespace RegexRetrieval.Queries
             }
         }
 
-        public static readonly CaseAction Skip = (state, s, m) => { };
+        public static readonly SimpleCaseAction Skip = (state, s, m) => { };
 
-        public delegate void CaseAction(StateT state, string str, Match match);
+        public delegate void SimpleCaseAction(StateT state, string str, Match match);
+        public delegate int CaseAction(StateT state, string str, Match match);
         public delegate int DefaultAction(StateT state, string str, int index);
     }
 }
