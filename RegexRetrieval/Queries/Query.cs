@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace RegexRetrieval.Queries
 {
@@ -62,7 +61,7 @@ namespace RegexRetrieval.Queries
             var comb = 1;
 
             var tokensWord = 0;
-            var tokensQMark= 0;
+            var tokensQMark = 0;
             var tokensStar = 0;
             var tokensCharSet = 0;
             var tokensOptional = 0;
@@ -174,37 +173,6 @@ namespace RegexRetrieval.Queries
             }
 
             return words.Select(w => w.ToString());
-        }
-
-        public string ToRegexPattern()
-        {
-            var sb = new StringBuilder();
-
-            foreach (var token in Tokens)
-            {
-                switch (token.TokenType)
-                {
-                    case QueryToken.Type.Words:
-                        sb.Append(Regex.Escape(token.Value));
-                        break;
-                    case QueryToken.Type.QMark:
-                        sb.Append(@"[\s\S]");
-                        break;
-                    case QueryToken.Type.Star:
-                        sb.Append(@"[\s\S]*");
-                        break;
-                    case QueryToken.Type.CharSet:
-                        sb.Append('[').Append(Regex.Escape(token.Value)).Append(']');
-                        break;
-                    case QueryToken.Type.Optional:
-                        sb.Append("(?:").Append(Regex.Escape(token.Value)).Append(')').Append('?');
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-
-            return sb.ToString();
         }
 
         public IEnumerable<PositionalSubString> GetSubStrings(int maxPosition = 100_000)

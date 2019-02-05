@@ -1,10 +1,42 @@
 ﻿using System;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace RegexRetrieval.Queries
 {
     public static class QueryPredicate
     {
+        internal static string ToRegexPattern(this Query query)
+        {
+            var sb = new StringBuilder(16);
+
+            foreach (var token in query.Tokens)
+            {
+                switch (token.TokenType)
+                {
+                    case QueryToken.Type.Words:
+                        sb.Append(Regex.Escape(token.Value));
+                        break;
+                    case QueryToken.Type.QMark:
+                        sb.Append(@"[\s\S]");
+                        break;
+                    case QueryToken.Type.Star:
+                        sb.Append(@"[\s\S]*");
+                        break;
+                    case QueryToken.Type.CharSet:
+                        sb.Append('[').Append(Regex.Escape(token.Value)).Append(']');
+                        break;
+                    case QueryToken.Type.Optional:
+                        sb.Append("(?:").Append(Regex.Escape(token.Value)).Append(')').Append('?');
+                        break;
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+
+            return sb.ToString();
+        }
+
         public static Func<string, bool> CreatePredicate(this Query query)
         {
             // We assume an optimized token stream.
