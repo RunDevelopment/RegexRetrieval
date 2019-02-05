@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace RegexRetrieval.Queries
+namespace RegexRetrieval.Queries.Tokenizers
 {
     public class Tokenizer<StateT>
     {
@@ -21,7 +21,7 @@ namespace RegexRetrieval.Queries
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
 
-            AddCase(regex, (s, str, m ) =>
+            AddCase(regex, (s, str, m) =>
             {
                 action(s, str, m);
                 return m.Length;

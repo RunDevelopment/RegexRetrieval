@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace RegexRetrieval.Queries
+namespace RegexRetrieval.Queries.Tokenizers
 {
     public interface IQueryTokenizer
     {

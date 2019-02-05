@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using static RegexRetrieval.Queries. QueryTokenizerUtil;
+using static RegexRetrieval.Queries.Tokenizers.QueryTokenizerUtil;
 
-namespace RegexRetrieval.Queries
+namespace RegexRetrieval.Queries.Tokenizers
 {
     public class NetspeakQueryTokenizer : IQueryTokenizer
     {

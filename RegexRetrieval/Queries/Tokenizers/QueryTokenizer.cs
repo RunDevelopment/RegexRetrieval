@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using static RegexRetrieval.Queries.QueryTokenizerUtil;
+using static RegexRetrieval.Queries.Tokenizers.QueryTokenizerUtil;
 
-namespace RegexRetrieval.Queries
+namespace RegexRetrieval.Queries.Tokenizers
 {
     public class QueryTokenizer : IQueryTokenizer
     {
@@ -56,7 +56,7 @@ namespace RegexRetrieval.Queries
                 {
                     c = query[p];
                     if (c == '\\') p++;
-                    else if (!IsValidCharacter(c)) break; 
+                    else if (!IsValidCharacter(c)) break;
                 }
 
                 if (p > query.Length) throw TokenizerError("Invalid escape", query, query.Length - 1);
@@ -97,7 +97,7 @@ namespace RegexRetrieval.Queries
             }
             catch (Exception e)
             {
-               throw TokenizerError("Invalid escape", query, capture.Index, rangeLength: capture.Length);
+                throw TokenizerError("Invalid escape", query, capture.Index, rangeLength: capture.Length);
             }
         }
         private static bool IsValidCharacter(char c)
