@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using static RegexRetrieval.Queries.Tokenizers.QueryTokenizerUtil;
+using static RegexRetrieval.Queries.Parsers.ParserUtil;
 
-namespace RegexRetrieval.Queries.Tokenizers
+namespace RegexRetrieval.Queries.Parsers
 {
-    public class NetspeakQueryTokenizer : IQueryTokenizer
+    public class NetspeakQueryParser : IQueryParser
     {
         private static readonly Regex QMark = ToStickyRegExp(@"\?");
         private static readonly Regex Star = ToStickyRegExp(@"\*");
@@ -15,7 +15,7 @@ namespace RegexRetrieval.Queries.Tokenizers
 
         private readonly Tokenizer<State> tokenizer = CreateTokenizer();
 
-        private NetspeakQueryTokenizer() { }
+        private NetspeakQueryParser() { }
 
         private static Tokenizer<State> CreateTokenizer()
         {
@@ -115,7 +115,7 @@ namespace RegexRetrieval.Queries.Tokenizers
             => @"?*+(){}[]|".IndexOf(c) == -1;
 
 
-        public List<QueryToken> Tokenize(string query)
+        public List<QueryToken> Parse(string query)
         {
             var state = new State();
             tokenizer.Tokenize(query, state);
@@ -128,6 +128,6 @@ namespace RegexRetrieval.Queries.Tokenizers
             public List<QueryToken> Tokens = new List<QueryToken>(16);
         }
 
-        public static readonly NetspeakQueryTokenizer Instance = new NetspeakQueryTokenizer();
+        public static readonly NetspeakQueryParser Instance = new NetspeakQueryParser();
     }
 }

@@ -2,9 +2,9 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace RegexRetrieval.Queries.Tokenizers
+namespace RegexRetrieval.Queries.Parsers
 {
-    internal static class QueryTokenizerUtil
+    internal static class ParserUtil
     {
         public static Regex ToStickyRegExp(string pattern)
             => new Regex(@"\G(?:" + pattern + ")", RegexOptions.CultureInvariant | RegexOptions.Compiled);

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace RegexRetrieval.Queries.Tokenizers
+namespace RegexRetrieval.Queries.Parsers
 {
     public class Tokenizer<StateT>
     {

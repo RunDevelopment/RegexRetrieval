@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using static RegexRetrieval.Queries.Tokenizers.QueryTokenizerUtil;
+using static RegexRetrieval.Queries.Parsers.ParserUtil;
 
-namespace RegexRetrieval.Queries.Tokenizers
+namespace RegexRetrieval.Queries.Parsers
 {
-    public class QueryTokenizer : IQueryTokenizer
+    public class QueryParser : IQueryParser
     {
         private static readonly Regex QMark = ToStickyRegExp(@"\?");
         private static readonly Regex Star = ToStickyRegExp(@"\*");
@@ -16,7 +16,7 @@ namespace RegexRetrieval.Queries.Tokenizers
 
         private readonly Tokenizer<State> tokenizer = CreateTokenizer();
 
-        private QueryTokenizer() { }
+        private QueryParser() { }
 
         private static Tokenizer<State> CreateTokenizer()
         {
@@ -104,7 +104,7 @@ namespace RegexRetrieval.Queries.Tokenizers
             => @"?*+(){}[]|\".IndexOf(c) == -1;
 
 
-        public List<QueryToken> Tokenize(string query)
+        public List<QueryToken> Parse(string query)
         {
             var state = new State();
             tokenizer.Tokenize(query, state);
@@ -117,6 +117,6 @@ namespace RegexRetrieval.Queries.Tokenizers
             public List<QueryToken> Tokens = new List<QueryToken>(16);
         }
 
-        public static readonly QueryTokenizer Instance = new QueryTokenizer();
+        public static readonly QueryParser Instance = new QueryParser();
     }
 }

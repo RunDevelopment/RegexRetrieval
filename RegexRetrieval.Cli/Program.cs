@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using RegexRetrieval.Queries;
-using RegexRetrieval.Queries.Tokenizers;
+using RegexRetrieval.Queries.Parsers;
 
 namespace RegexRetrieval.Cli
 {
@@ -17,6 +17,7 @@ namespace RegexRetrieval.Cli
 
         private static string[] __word;
         private static IRegexRetriever __retriever;
+        private static IQueryParser __parser = NetspeakQueryParser.Instance;
 
         private static string[] Words
         {
@@ -27,6 +28,11 @@ namespace RegexRetrieval.Cli
         {
             get => __retriever ?? throw new Exception("No retriever. Please create one using `$CREATE`");
             set => __retriever = value;
+        }
+        private static IQueryParser Parser
+        {
+            get => __parser ?? throw new Exception("No parser.");
+            set => __parser = value;
         }
 
         private static void Main(string[] args)
@@ -78,7 +84,7 @@ namespace RegexRetrieval.Cli
 
         private static Query ParseQueryString(string query)
         {
-            return new Query(NetspeakQueryTokenizer.Instance.Tokenize(query));
+            return new Query(Parser.Parse(query));
         }
 
         private static void ProcessQuery(string query)
