@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RegexRetrieval.Queries;
-using static RegexRetrieval.Queries.QueryToken;
+using static Test.Queries.AssertQuery;
 
 namespace Test.Queries
 {
@@ -14,13 +14,13 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddWord("foo");
-            AssertQuery.AssertTokens(new[] { CreateWord("foo") }, tokens);
+            AssertQuery.AssertTokens(new[] { Word("foo") }, tokens);
 
             tokens.AddWord("bar");
-            AssertQuery.AssertTokens(new[] { CreateWord("foobar") }, tokens);
+            AssertQuery.AssertTokens(new[] { Word("foobar") }, tokens);
 
             tokens.AddWord("");
-            AssertQuery.AssertTokens(new[] { CreateWord("foobar") }, tokens);
+            AssertQuery.AssertTokens(new[] { Word("foobar") }, tokens);
         }
 
         [TestMethod]
@@ -29,16 +29,16 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddStar();
-            AssertQuery.AssertTokens(new[] { CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { Star }, tokens);
 
             tokens.AddQMark();
-            AssertQuery.AssertTokens(new[] { CreateQMark(), CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { QMark, Star }, tokens);
 
             tokens.AddQMark();
-            AssertQuery.AssertTokens(new[] { CreateQMark(), CreateQMark(), CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { QMark, QMark, Star }, tokens);
 
             tokens.AddStar();
-            AssertQuery.AssertTokens(new[] { CreateQMark(), CreateQMark(), CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { QMark, QMark, Star }, tokens);
         }
 
         [TestMethod]
@@ -47,10 +47,10 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddCharSet("abc");
-            AssertQuery.AssertTokens(new[] { CreateCharSet("abc") }, tokens);
+            AssertQuery.AssertTokens(new[] { CharSet("abc") }, tokens);
 
             tokens.AddCharSet("d");
-            AssertQuery.AssertTokens(new[] { CreateCharSet("abc"), CreateWord("d") }, tokens);
+            AssertQuery.AssertTokens(new[] { CharSet("abc"), Word("d") }, tokens);
         }
 
         [TestMethod]
@@ -59,10 +59,10 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddOptional("a");
-            AssertQuery.AssertTokens(new[] { CreateOptional("a") }, tokens);
+            AssertQuery.AssertTokens(new[] { Optional("a") }, tokens);
 
             tokens.AddOptional("");
-            AssertQuery.AssertTokens(new[] { CreateOptional("a") }, tokens);
+            AssertQuery.AssertTokens(new[] { Optional("a") }, tokens);
         }
 
         [TestMethod]
@@ -71,11 +71,11 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddStar().AddOptional("a").AddOptional("b");
-            AssertQuery.AssertTokens(new[] { CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { Star }, tokens);
 
             tokens.Clear();
             tokens.AddOptional("a").AddOptional("b").AddStar();
-            AssertQuery.AssertTokens(new[] { CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { Star }, tokens);
         }
 
         [TestMethod]
@@ -84,11 +84,11 @@ namespace Test.Queries
             var tokens = new List<QueryToken>();
 
             tokens.AddStar().AddQMark().AddOptional("a").AddOptional("b");
-            AssertQuery.AssertTokens(new[] { CreateQMark(), CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { QMark, Star }, tokens);
 
             tokens.Clear();
             tokens.AddOptional("a").AddQMark().AddOptional("b").AddQMark().AddStar();
-            AssertQuery.AssertTokens(new[] { CreateQMark(), CreateQMark(), CreateStar() }, tokens);
+            AssertQuery.AssertTokens(new[] { QMark, QMark, Star }, tokens);
         }
     }
 }
