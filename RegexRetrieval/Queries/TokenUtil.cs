@@ -67,7 +67,9 @@ namespace RegexRetrieval.Queries
          * 
          * Query equvivalence rules are used to make queries as simple as possible.
          * A query q is simpler that a query p iff 
-         *  q.ToString().Length + q.TokenCount < p.ToString().Length + p.TokenCount
+         *  q.ToString().Length + q.TokenCount < p.ToString().Length + p.TokenCount .
+         *  
+         * The rules referred to below are the equivalence rules described in Queries.md
          */
 
         public static IList<QueryToken> AddWord(this IList<QueryToken> tokens, string value)
