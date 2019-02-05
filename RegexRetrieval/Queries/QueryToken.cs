@@ -37,7 +37,7 @@ namespace RegexRetrieval.Queries
                 case Type.CharSet:
                     return "[" + Value + "]";
                 case Type.Optional:
-                    return "{" + Value + "}";
+                    return "(" + Value + ")";
                 default:
                     throw new InvalidOperationException();
             }

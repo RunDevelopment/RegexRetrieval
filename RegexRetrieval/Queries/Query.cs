@@ -6,31 +6,6 @@ using System.Text.RegularExpressions;
 
 namespace RegexRetrieval.Queries
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <remarks>
-    /// For easier processing, this uses an internal query syntax which is a superset of the Netspeak syntax:
-    /// <para>
-    /// The following are special characters and not allow as characters: <c>?*+()[]{}|</c>
-    /// </para>
-    /// <para>
-    /// <list type="bullet">
-    /// <item>
-    /// <c>?</c> matches any one character. Regex: /[\s\S]/
-    /// </item>
-    /// <item>
-    /// <c>*</c> matches any number characters. Regex: /[\s\S]*/
-    /// </item>
-    /// <item>
-    /// <c>[abc]</c> matches one characters that is in the set. Regex: /[abc]/
-    /// </item>
-    /// <item>
-    /// <c>{foo}</c> matches the word zero or one times. Regex: /(?:foo)?/
-    /// </item>
-    /// </list>
-    /// </para>
-    /// </remarks>
     public class Query
     {
         public List<QueryToken> Tokens { get; }
@@ -222,7 +197,7 @@ namespace RegexRetrieval.Queries
                         sb.Append('[').Append(Regex.Escape(token.Value)).Append(']');
                         break;
                     case QueryToken.Type.Optional:
-                        sb.Append('[').Append(Regex.Escape(token.Value)).Append(']').Append('?');
+                        sb.Append("(?:").Append(Regex.Escape(token.Value)).Append(')').Append('?');
                         break;
                     default:
                         throw new InvalidOperationException();
