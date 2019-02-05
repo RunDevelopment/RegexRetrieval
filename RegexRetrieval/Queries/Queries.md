@@ -4,7 +4,7 @@
 ## Syntax
 
 ```
-ValidChar := [^|?*(){}\[\]]
+ValidChar := [^|?*(){}\[\]\\], "\\" AnyCharacter
 
 Word      := ValidChar*
 QMark     := "?"
@@ -15,6 +15,8 @@ Optional  := "(" ValidChar* ")"
 Token     := Word, QMark, Star, CharSet, Optional
 Query     := Token Token*
 ```
+
+Note: Backslash `\` is used to escape characters.
 
 
 ## Token semantics
