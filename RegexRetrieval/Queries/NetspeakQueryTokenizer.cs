@@ -3,11 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using static RegexRetrieval.Queries. QueryTokenizerUtil;
 
 namespace RegexRetrieval.Queries
 {
-    public class NetspeakQueryTokenizer // : IQueryTokenizer
+    public class NetspeakQueryTokenizer : IQueryTokenizer
     {
+        private static readonly Regex QMark = ToStickyRegExp(@"\?");
+        private static readonly Regex Star = ToStickyRegExp(@"\*");
+        private static readonly Regex Plus = ToStickyRegExp(@"\+");
+
+        private static readonly Regex Curly = ToStickyRegExp(@"\{([\s\S]*?)\}");
+        private static readonly Regex Square = ToStickyRegExp(@"\[([\s\S]*?)\]");
+
         private readonly Tokenizer<State> tokenizer = CreateTokenizer();
 
         private NetspeakQueryTokenizer() { }
@@ -16,25 +24,25 @@ namespace RegexRetrieval.Queries
         {
             var parser = new Tokenizer<State>();
 
-            parser.AddCase(QueryUtil.QMark, (state, query, m) =>
+            parser.AddCase(QMark, (state, query, m) =>
             {
                 state.Tokens.AddQMark();
             });
-            parser.AddCase(QueryUtil.Star, (state, query, m) =>
+            parser.AddCase(Star, (state, query, m) =>
             {
                 state.Tokens.AddStar();
             });
-            parser.AddCase(QueryUtil.Plus, (state, query, m) =>
+            parser.AddCase(Plus, (state, query, m) =>
             {
                 state.Tokens.AddQMark().AddStar();
             });
 
-            parser.AddCase(QueryUtil.Curly, (state, query, m) =>
+            parser.AddCase(Curly, (state, query, m) =>
             {
                 CheckSetCharacters(m.Groups[1], query);
 
                 // {abc} == regex: /[abc][abc][abc]/
-                var set = state.UniqueCharacters(m.Groups[1].Value);
+                var set = TokenUtil.UniqueCharSet(m.Groups[1].Value);
                 var length = m.Groups[1].Length;
 
                 if (length == 0) return; // nothing to do here
@@ -50,12 +58,12 @@ namespace RegexRetrieval.Queries
                         state.Tokens.AddCharSet(set);
                 }
             });
-            parser.AddCase(QueryUtil.Square, (state, query, m) =>
+            parser.AddCase(Square, (state, query, m) =>
             {
                 var group = m.Groups[1];
 
                 if (group.Length == 0)
-                    ThrowParserError("There has to be at least one character", query, m.Index, rangeLength: 2);
+                    throw TokenizerError("There has to be at least one character", query, m.Index, rangeLength: 2);
                 CheckSetCharacters(group, query);
 
                 if (group.Length == 1)
@@ -68,7 +76,7 @@ namespace RegexRetrieval.Queries
                 else
                 {
                     // [abc] == regex: /[abc]/
-                    var set = state.UniqueCharacters(group.Value);
+                    var set = TokenUtil.UniqueCharSet(group.Value);
 
                     if (set.Length == 1)
                         state.Tokens.AddWord(set);
@@ -82,7 +90,7 @@ namespace RegexRetrieval.Queries
                 char c = query[position];
 
                 if (!IsValidCharacter(c))
-                    ThrowParserError($"Invalid character '{c}'", query, position);
+                    throw TokenizerError($"Invalid character '{c}'", query, position);
 
                 int index = position;
                 int len = 1;
@@ -96,21 +104,6 @@ namespace RegexRetrieval.Queries
             return parser;
         }
 
-        private static void ThrowParserError(string msg, string query, int position, int rangeIndex = int.MinValue, int rangeLength = 1)
-        {
-            if (rangeIndex == int.MinValue) rangeIndex = position;
-
-            var sb = new StringBuilder();
-            sb.Append(msg).Append(" at ").Append(position).Append(" in\n");
-            sb.Append(query).Append('\n');
-
-            sb.Append(' ', rangeIndex);
-            sb.Append('~', position - rangeIndex);
-            sb.Append('^');
-            sb.Append('~', rangeLength - (position - rangeIndex) - 1);
-
-            throw new InvalidOperationException(sb.ToString());
-        }
         private static void CheckSetCharacters(Group g, string query)
         {
             var set = g.Value;
@@ -118,14 +111,14 @@ namespace RegexRetrieval.Queries
             {
                 char c = set[i];
                 if (!IsValidCharacter(c))
-                    ThrowParserError($"Invalid character '{c}'", query, g.Index + i, g.Index, g.Length);
+                    throw TokenizerError($"Invalid character '{c}'", query, g.Index + i, g.Index, g.Length);
             }
         }
         private static bool IsValidCharacter(char c)
-            => @"?*+(){}\[\]|".IndexOf(c) == -1;
+            => @"?*+(){}[]|".IndexOf(c) == -1;
 
 
-        public List<QueryToken>  Tokenize(string query)
+        public List<QueryToken> Tokenize(string query)
         {
             var state = new State();
             tokenizer.Tokenize(query, state);
@@ -136,24 +129,6 @@ namespace RegexRetrieval.Queries
         private class State
         {
             public List<QueryToken> Tokens = new List<QueryToken>(16);
-
-            private readonly HashSet<char> charSet = new HashSet<char>();
-
-            public string UniqueCharacters(string set)
-            {
-                if (set.Length <= 1)
-                    return set;
-
-                charSet.Clear();
-
-                foreach (var c in set)
-                    charSet.Add(c);
-
-                if (charSet.Count == set.Length)
-                    return set;
-
-                return new string(charSet.ToArray());
-            }
         }
 
         public static readonly NetspeakQueryTokenizer Instance = new NetspeakQueryTokenizer();
