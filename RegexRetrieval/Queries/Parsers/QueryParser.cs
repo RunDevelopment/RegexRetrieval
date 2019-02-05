@@ -12,7 +12,7 @@ namespace RegexRetrieval.Queries.Parsers
         private static readonly Regex Star = ToStickyRegExp(@"\*");
 
         private static readonly Regex Square = ToStickyRegExp(@"\[((?:[^\\]|\\[\s\S])*?)\]");
-        private static readonly Regex Round = ToStickyRegExp(@"\{((?:[^\\]|\\[\s\S])*?)\}");
+        private static readonly Regex Round = ToStickyRegExp(@"\(((?:[^\\]|\\[\s\S])*?)\)");
 
         private readonly Tokenizer<State> tokenizer = CreateTokenizer();
 
@@ -61,7 +61,7 @@ namespace RegexRetrieval.Queries.Parsers
 
                 if (p > query.Length) throw TokenizerError("Invalid escape", query, query.Length - 1);
 
-                int length = position - p;
+                int length = p - position;
                 var word = Unescape(query.Substring(position, length));
 
                 state.Tokens.AddWord(word);
