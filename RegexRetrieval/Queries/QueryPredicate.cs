@@ -8,7 +8,7 @@ namespace RegexRetrieval.Queries
     {
         internal static string ToRegexPattern(this Query query)
         {
-            var sb = new StringBuilder(16);
+            var sb = new StringBuilder(64);
 
             foreach (var token in query.Tokens)
             {
