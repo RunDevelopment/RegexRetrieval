@@ -51,7 +51,7 @@ namespace RegexRetrieval.Queries
             var tokens = query.Tokens;
 
             if (tokens[0].TokenType != QueryToken.Type.Words &&
-                tokens[query.Tokens.Count - 1].TokenType == QueryToken.Type.Words)
+                tokens[tokens.Count - 1].TokenType == QueryToken.Type.Words)
             {
                 // because we always match the whole word, the matching direction doesn't matter for correctness,
                 // BUT the regex engine can better optimize for sub strings like this and we can avoid backtracking.
@@ -65,10 +65,7 @@ namespace RegexRetrieval.Queries
             var min = query.MinLength;
             var max = query.MaxLength;
 
-            return str =>
-            {
-                return str.Length >= min && str.Length <= max && r.IsMatch(str);
-            };
+            return str => str.Length >= min && str.Length <= max && r.IsMatch(str);
         }
 
         private static Func<string, bool> TryStringOperations(Query query)

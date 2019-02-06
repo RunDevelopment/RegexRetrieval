@@ -208,6 +208,7 @@ namespace RegexRetrieval
                 var first = selections[0];
                 var second = selections[1];
 
+                // it's important to intersect 2 at most because after that the intersection overhead takes over
                 if (second.Count < first.Count * MaxSelectionSizeDifferenceThreshold)
                 {
                     minSelection = minSelection.SetIntersect(second.Value);

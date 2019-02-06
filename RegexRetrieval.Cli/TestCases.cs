@@ -45,6 +45,8 @@
 
             "initiali[zs]e",
             "[bjp]et",
+            null,
+
             "colo[u]r",
             "[a][b][c]",
             null,
