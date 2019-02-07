@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RegexRetrieval.Matcher
 {
@@ -26,51 +27,86 @@ namespace RegexRetrieval.Matcher
         {
             var rootNode = TrieNode.CreateRoot(words);
 
-            AddSubNodes(rootNode, options);
-            Console.Write("\r");
+            var listsPool = MatcherUtil.CreateListArrayPool(words.GetCharactersDistribution());
+
+            AddSubNodes(rootNode, options, listsPool);
+
+            listsPool.Clear();
 
             return rootNode;
         }
-        private static void AddSubNodes(TrieNode node, CreationOptions options, List<int>[] lists = null)
+        private static void AddSubNodes(TrieNode node, CreationOptions options, ObjectPool<List<int>[]> listsPool)
         {
             if (node.Path.Length >= options.MaxDepth) return;
             if (node.SelectionLength < options.MinSplit) return;
 
-            if (lists == null)
-                lists = new List<int>[0x10000].Set(i => new List<int>());
+            var lists = listsPool.Lend();
             var charCounter = new int[0x10000].Set(i => -1);
 
             string[] words = node.RootWords;
             string stack = node.Path;
-            Console.Write("\r" + stack);
 
-            foreach (int s in node.Selection ?? Util.Iterate(0, node.SelectionLength))
+            if (node.IsRoot)
             {
-                var word = words[s];
-                if (word.Length <= stack.Length) continue;
-
-                int offset = 0;
-                while (offset < word.Length)
+                // optimization because we know that: node.Selection == null && stack == ""
+                for (int s = 0; s < node.SelectionLength; s++)
                 {
-                    int index = word.IndexOf(stack, offset, word.Length - offset - 1, StringComparison.Ordinal);
-                    if (index == -1) break;
-                    offset = index + 1;
+                    var word = words[s];
 
-                    // get next char
-                    var c = word[index + stack.Length];
+                    foreach (var c in word)
+                    {
+                        // so that we don't add a word twice
+                        if (charCounter[c] == s) continue;
+                        charCounter[c] = s;
 
-                    // so that we don't add a word twice
-                    if (charCounter[c] == s) continue;
-                    charCounter[c] = s;
+                        lists[c].Add(s);
+                    }
+                }
+            }
+            else
+            {
+                foreach (int s in node.Selection)
+                {
+                    var word = words[s];
+                    if (word.Length <= stack.Length) continue;
 
-                    lists[c].Add(s);
+                    int offset = 0;
+                    while (offset < word.Length)
+                    {
+                        int index = word.IndexOf(stack, offset, word.Length - offset - 1, StringComparison.Ordinal);
+                        if (index == -1) break;
+                        offset = index + 1;
+
+                        // get next char
+                        var c = word[index + stack.Length];
+
+                        // so that we don't add a word twice
+                        if (charCounter[c] == s) continue;
+                        charCounter[c] = s;
+
+                        lists[c].Add(s);
+                    }
                 }
             }
 
-            node.AddAsSubNodes(lists, true);
 
-            foreach (var n in node.SubNodes)
-                AddSubNodes(n, options, lists);
+            node.AddAsSubNodes(lists);
+            listsPool.Return(lists);
+
+            if (node.IsRoot)
+            {
+                node.SubNodes.AsParallel().ForAll(n =>
+                {
+                    AddSubNodes(n, options, listsPool);
+                });
+            }
+            else
+            {
+                foreach (var n in node.SubNodes)
+                {
+                    AddSubNodes(n, options, listsPool);
+                }
+            }
         }
 
         #endregion

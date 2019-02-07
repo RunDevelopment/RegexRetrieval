@@ -6,7 +6,7 @@ namespace RegexRetrieval.Matcher
 {
     public class PositionalSubStringTrieMatcher
     {
-        private static readonly Selection<int>[] ListWithEmptySelection = new  [] { Selection<int>.Empty };
+        private static readonly Selection<int>[] ListWithEmptySelection = new[] { Selection<int>.Empty };
 
         private readonly TrieNode[] roots;
 
@@ -26,16 +26,16 @@ namespace RegexRetrieval.Matcher
         {
             var maxWordLength = words.Select(w => w.Length).Max();
 
-            var selection = new int[words.Length].Set(i => i);
-            var rootNodes = new TrieNode[maxWordLength].Set(i =>
-            {
-                Console.Write("{0}/{1}\r", i, maxWordLength);
+            var listsPool = MatcherUtil.CreateListArrayPool(words.GetCharactersDistribution());
 
+            var selection = new int[words.Length].Set(i => i);
+            var rootNodes = new TrieNode[maxWordLength].SetParallel(i =>
+            {
                 // create root
                 var r = TrieNode.CreateRoot(words, selection);
 
                 // add sub nodes
-                AddSubNodes(r, i, options, leftToRight);
+                AddSubNodes(r, i, options, leftToRight, listsPool);
 
                 // to save memory
                 r.ForgetSelection();
@@ -44,10 +44,12 @@ namespace RegexRetrieval.Matcher
                 return r;
             });
 
+            listsPool.Clear();
+
             return rootNodes;
         }
 
-        private static void AddSubNodes(TrieNode node, int position, CreationOptions options, bool leftToRight, List<int>[] lists = null)
+        private static void AddSubNodes(TrieNode node, int position, CreationOptions options, bool leftToRight, ObjectPool<List<int>[]> listsPool)
         {
             if (!node.IsRoot)
             {
@@ -55,8 +57,7 @@ namespace RegexRetrieval.Matcher
                 if (node.SelectionLength < options.MinSplit) return;
             }
 
-            if (lists == null)
-                lists = new List<int>[0x10000].Set(i => new List<int>());
+            var lists = listsPool.Lend();
             var words = node.RootWords;
 
             foreach (int s in node.Selection)
@@ -66,10 +67,11 @@ namespace RegexRetrieval.Matcher
                     lists[leftToRight ? word[position] : word[word.Length - 1 - position]].Add(s);
             }
 
-            node.AddAsSubNodes(lists, true);
+            node.AddAsSubNodes(lists);
+            listsPool.Return(lists);
 
             foreach (var n in node.SubNodes)
-                AddSubNodes(n, position + 1, options, leftToRight, lists);
+                AddSubNodes(n, position + 1, options, leftToRight, listsPool);
         }
 
         #endregion
@@ -105,7 +107,7 @@ namespace RegexRetrieval.Matcher
         /// <returns></returns>
         public ICollection<Selection<int>> GetSelections(int position, SubString value)
         {
-            if (Options.MaxDepth <= 0) return Array.Empty< Selection<int>>();
+            if (Options.MaxDepth <= 0) return Array.Empty<Selection<int>>();
             if (position < 0 || position + value.Length > roots.Length) return ListWithEmptySelection;
 
             var nodes = new List<TrieNode>(value.Length / Options.MaxDepth + 2);
@@ -150,7 +152,7 @@ namespace RegexRetrieval.Matcher
             // sort by ascending selection size
             nodes.Sort((a, b) => a.SelectionLength - b.SelectionLength);
 
-            return nodes.Select(n => new Selection<int>( n.Selection)).ToList();
+            return nodes.Select(n => new Selection<int>(n.Selection)).ToList();
         }
 
         #endregion
