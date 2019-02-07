@@ -117,62 +117,82 @@ namespace RegexRetrieval.Queries
         private static int ClampMult(int a, int b)
             => (int) Math.Max(int.MinValue, Math.Min(Math.BigMul(a, b), int.MaxValue));
 
-        public IEnumerable<string> GetCombinations()
+        public IEnumerable<string> GetCombinations(int maxWordLength = 256)
         {
             if (!FiniteWords) throw new InvalidOperationException();
 
-            if (Combinations == 1) return new[] { Tokens[0].Value /* adjacent words are combined */ };
+            var tokens = Tokens;
 
-            var words = new List<StringBuilder>(Combinations)
+            if (Combinations == 1) return new[] { tokens[0].Value /* adjacent words are combined */ };
+
+            char[] chars = new char[maxWordLength];
+            IEnumerable<string> YieldStrings(int tokenIndex, int startIndex)
             {
-                new StringBuilder()
-            };
-
-            void AddToAll(IList<string> suffixes)
-            {
-                var first = suffixes[0];
-                var count = words.Count;
-
-                for (int j = 1; j < suffixes.Count; j++)
+                if (tokenIndex >= tokens.Count)
                 {
-                    var suf = suffixes[j];
-                    for (int i = 0; i < count; i++)
-                        words.Add(new StringBuilder(words[i].ToString()).Append(suf));
+                    yield return new string(chars, 0, startIndex);
                 }
+                else
+                {
+                    var token = tokens[tokenIndex];
+                    switch (token.TokenType)
+                    {
+                        case QueryToken.Type.Words:
+                            {
+                                if (startIndex + token.Value.Length > maxWordLength)
+                                    yield break;
 
-                if (first.Length > 0)
-                    for (int i = 0; i < count; i++)
-                        words[i].Append(first);
+                                // add all characters
+                                var i = startIndex;
+                                foreach (var c in token.Value)
+                                    chars[i++] = c;
+
+                                // yield return all combinations
+                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex + i))
+                                    yield return str;
+                                break;
+                            }
+                        case QueryToken.Type.CharSet:
+                            {
+                                if (startIndex + 1 > maxWordLength)
+                                    yield break;
+
+                                foreach (var c in token.Value)
+                                {
+                                    chars[startIndex] = c;
+
+                                    // yield return all combinations
+                                    foreach (var str in YieldStrings(tokenIndex + 1, startIndex + 1))
+                                        yield return str;
+                                }
+                                break;
+                            }
+                        case QueryToken.Type.Optional:
+                            {
+                                // yield return all combinations WITHOUT the optional
+                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex))
+                                    yield return str;
+
+                                if (startIndex + token.Value.Length > maxWordLength)
+                                    yield break;
+
+                                // add all characters
+                                var i = startIndex;
+                                foreach (var c in token.Value)
+                                    chars[i++] = c;
+
+                                // yield return all combinations WITH the optional
+                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex + i))
+                                    yield return str;
+                                break;
+                            }
+                        default:
+                            throw new InvalidOperationException();
+                    }
+                }
             }
 
-            var array1 = new string[1];
-            var array2 = new string[2] { "", null };
-            var list = new List<string>();
-
-            foreach (var token in Tokens)
-            {
-                switch (token.TokenType)
-                {
-                    case QueryToken.Type.Words:
-                        array1[0] = token.Value;
-                        AddToAll(array1);
-                        break;
-                    case QueryToken.Type.CharSet:
-                        foreach (var c in token.Value)
-                            list.Add(c.ToString());
-                        AddToAll(list);
-                        list.Clear();
-                        break;
-                    case QueryToken.Type.Optional:
-                        array2[1] = token.Value;
-                        AddToAll(array2);
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-            }
-
-            return words.Select(w => w.ToString());
+            return YieldStrings(0, 0);
         }
 
         public IEnumerable<PositionalSubString> GetSubStrings(int maxPosition = 100_000)
