@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using RegexRetrieval.Compressed;
 
 namespace RegexRetrieval.Matcher
 {
@@ -12,36 +14,64 @@ namespace RegexRetrieval.Matcher
         /// <summary>
         /// At words selected are exactly index + min characters long.
         /// </summary>
-        private readonly int[][] exactly;
+        private readonly CompressedIndexCollection[] exactly;
 
         /// <summary>
         /// At words selected are at least index + min characters long.
         /// </summary>
-        private readonly SortedIndexCollection[] atLeast;
+        private readonly CompressedIndexCollection[] atLeast;
 
         public LengthMatcher(string[] words)
         {
             (min, max) = GetMinMaxLength(words);
             wordCount = words.Length;
 
-            var count = max - min + 1;
+            var selectionsCount = max - min + 1;
 
-            var exactly = new List<int>[count].Set(i => new List<int>());
-            var atLeast = new List<int>[count].Set(i => new List<int>());
+            var pool = new ObjectPool<List<int>>(
+                supplier: () => new List<int>(words.Length / 4 + 1),
+                cleanup: list => list.Clear());
 
-            for (int s = 0; s < words.Length; s++)
+
+            exactly = new CompressedIndexCollection[selectionsCount];
+            atLeast = new CompressedIndexCollection[selectionsCount];
+
+            void SetExactlyItem(int index)
             {
-                var index = words[s].Length - min;
-                exactly[index].Add(s);
-                for (int i = 0; i <= index; i++)
-                    atLeast[i].Add(s);
+                int len = index + min;
+
+                var tempList = pool.Lend();
+                for (int i = 0; i < words.Length; i++)
+                    if (words[i].Length == len)
+                        tempList.Add(i);
+
+                exactly[index] = new CompressedIndexCollection(tempList);
+                pool.Return(tempList);
             }
 
-            // create exact array
-            this.exactly = new int[count][].Set(i => exactly[i].ToArray());
-
             // create at least array
-            this.atLeast = new SortedIndexCollection[count].Set(i => new SortedIndexCollection(atLeast[i]));
+            void SetAtLeastItem(int index)
+            {
+                int minLen = index + min;
+
+                var tempList = pool.Lend();
+                for (int i = 0; i < words.Length; i++)
+                    if (words[i].Length >= minLen)
+                        tempList.Add(i);
+
+                atLeast[index] = new CompressedIndexCollection(tempList);
+                pool.Return(tempList);
+            }
+
+            var actions = new List<Action>(selectionsCount * 2);
+            for (int i = 0; i < selectionsCount; i++)
+            {
+                var index = i;
+                actions.Add(() => SetExactlyItem(index));
+                actions.Add(() => SetAtLeastItem(index));
+            }
+
+            actions.AsParallel().WithDegreeOfParallelism(4).ForAll(a => a());
         }
 
         private static (int Min, int Max) GetMinMaxLength(string[] words)
