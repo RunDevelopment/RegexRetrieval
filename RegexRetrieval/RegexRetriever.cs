@@ -23,12 +23,17 @@ namespace RegexRetrieval
         /// This won't have any effect if no word index is available.
         /// </para>
         /// </summary>
-        private const int WordIndexOptimizationThreshold = 100;
+        private const int WordIndexOptimizationThreshold = 1_000;
         /// <summary>
         /// The maximum relative size difference between the smallest the selection and the current one for it to be
         /// a part of the minimal selection.
         /// </summary>
         private const double MaxSelectionSizeDifferenceThreshold = 25.0;
+        /// <summary>
+        /// The maximum ration of number of words selected by the length matcher divided by the total number of words.
+        /// For all ratios greater that this, the selection of the length matcher will be ignored.
+        /// </summary>
+        private const double LengthMatcherMaxRatio = 0.5;
 
         public readonly string[] Words;
 
@@ -193,8 +198,10 @@ namespace RegexRetrieval
             {
                 var lengthSelection = lengthMatcher.GetSelection(query.MinLength, query.MaxLength);
 
-                if (!lengthSelection.IsAll)
+                if (!lengthSelection.IsAll && lengthSelection.Count / (double) Words.Length < LengthMatcherMaxRatio)
+                {
                     selections.Add(lengthSelection);
+                }
             }
 
             /*
@@ -213,6 +220,7 @@ namespace RegexRetrieval
                 if (first.IsEmpty)
                 {
                     // we found an empty selection
+                    SetInfo(InfoOptimizationMethod, "EmptySelection");
                     return Array.Empty<string>();
                 }
 
