@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Text.RegularExpressions;
 using RegexRetrieval.Queries;
@@ -51,7 +52,13 @@ namespace RegexRetrieval.Cli
                 Create(arguments.Length == 1 ? arguments[0] : null);
             });
             commands.AddCommand("TEST", Test);
-            commands.AddCommand("GC", _ => GC.Collect());
+            commands.AddCommand("GC", _ =>
+            {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect(2, GCCollectionMode.Forced, true, true);
+                var mem = GC.GetTotalMemory(true);
+                Console.WriteLine($"Memory: {mem / 1024.0 / 1024.0:00,0.0}MB");
+            });
 
             string query;
             while ((query = ReadInput()) != "")

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 using RegexRetrieval.Matcher;
 using RegexRetrieval.Queries;
 
@@ -89,6 +90,8 @@ namespace RegexRetrieval
                 var res = supplier();
 
                 logger($"\rCreated {name} ({watch.ElapsedTicks * 1.0 / Stopwatch.Frequency:0.#}s)");
+
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
                 GC.Collect();
 
                 return res;
@@ -179,7 +182,10 @@ namespace RegexRetrieval
             }
             // simple sub strings
             // Note that this is the last resort. Substring tries have no chance to compete with positional tries.
-            selections.AddRange(subStringTrie.GetSelection(subStringRanges.Select(r => r.Value), subStrTree));
+            if (subStringTrie != null)
+            {
+                selections.AddRange(subStringTrie.GetSelection(subStringRanges.Select(r => r.Value), subStrTree));
+            }
 
 
             // length
