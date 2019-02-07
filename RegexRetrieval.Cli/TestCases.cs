@@ -35,6 +35,8 @@
             "qq*",
             "*qq",
             "*qq*",
+            "*appendchild*",
+            "*C*",
             null,
 
             "a*b*c",
