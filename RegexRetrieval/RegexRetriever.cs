@@ -207,7 +207,17 @@ namespace RegexRetrieval
             IEnumerable<int> minSelection = null;
 
             if (selections.Count != 0)
-                minSelection = selections[0].Value;
+            {
+                var first = selections[0];
+
+                if (first.IsEmpty)
+                {
+                    // we found an empty selection
+                    return Array.Empty<string>();
+                }
+
+                minSelection = first.Value;
+            }
 
             if (selections.Count >= 2)
             {
