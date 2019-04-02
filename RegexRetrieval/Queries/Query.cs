@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace RegexRetrieval.Queries
 {
@@ -117,7 +115,7 @@ namespace RegexRetrieval.Queries
         private static int ClampMult(int a, int b)
             => (int) Math.Max(int.MinValue, Math.Min(Math.BigMul(a, b), int.MaxValue));
 
-        public IEnumerable<string> GetCombinations(int maxWordLength = 256)
+        public IEnumerable<string> GetCombinations()
         {
             if (!FiniteWords) throw new InvalidOperationException();
 
@@ -125,70 +123,60 @@ namespace RegexRetrieval.Queries
 
             if (Combinations == 1) return new[] { tokens[0].Value /* adjacent words are combined */ };
 
-            char[] chars = new char[maxWordLength];
+            char[] chars = new char[MaxLength];
             IEnumerable<string> YieldStrings(int tokenIndex, int startIndex)
             {
                 if (tokenIndex >= tokens.Count)
                 {
                     yield return new string(chars, 0, startIndex);
+                    yield break;
                 }
-                else
-                {
-                    var token = tokens[tokenIndex];
-                    switch (token.TokenType)
-                    {
-                        case QueryToken.Type.Words:
-                            {
-                                if (startIndex + token.Value.Length > maxWordLength)
-                                    yield break;
 
-                                // add all characters
-                                var i = startIndex;
-                                foreach (var c in token.Value)
-                                    chars[i++] = c;
+                var token = tokens[tokenIndex];
+                switch (token.TokenType)
+                {
+                    case QueryToken.Type.Words:
+                        {
+                            // add all characters
+                            var i = startIndex;
+                            foreach (var c in token.Value)
+                                chars[i++] = c;
+
+                            // yield return all combinations
+                            foreach (var str in YieldStrings(tokenIndex + 1, i))
+                                yield return str;
+                            break;
+                        }
+                    case QueryToken.Type.CharSet:
+                        {
+                            foreach (var c in token.Value)
+                            {
+                                chars[startIndex] = c;
 
                                 // yield return all combinations
-                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex + i))
+                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex + 1))
                                     yield return str;
-                                break;
                             }
-                        case QueryToken.Type.CharSet:
-                            {
-                                if (startIndex + 1 > maxWordLength)
-                                    yield break;
+                            break;
+                        }
+                    case QueryToken.Type.Optional:
+                        {
+                            // yield return all combinations WITHOUT the optional
+                            foreach (var str in YieldStrings(tokenIndex + 1, startIndex))
+                                yield return str;
 
-                                foreach (var c in token.Value)
-                                {
-                                    chars[startIndex] = c;
+                            // add all characters
+                            var i = startIndex;
+                            foreach (var c in token.Value)
+                                chars[i++] = c;
 
-                                    // yield return all combinations
-                                    foreach (var str in YieldStrings(tokenIndex + 1, startIndex + 1))
-                                        yield return str;
-                                }
-                                break;
-                            }
-                        case QueryToken.Type.Optional:
-                            {
-                                // yield return all combinations WITHOUT the optional
-                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex))
-                                    yield return str;
-
-                                if (startIndex + token.Value.Length > maxWordLength)
-                                    yield break;
-
-                                // add all characters
-                                var i = startIndex;
-                                foreach (var c in token.Value)
-                                    chars[i++] = c;
-
-                                // yield return all combinations WITH the optional
-                                foreach (var str in YieldStrings(tokenIndex + 1, startIndex + i))
-                                    yield return str;
-                                break;
-                            }
-                        default:
-                            throw new InvalidOperationException();
-                    }
+                            // yield return all combinations WITH the optional
+                            foreach (var str in YieldStrings(tokenIndex + 1, i))
+                                yield return str;
+                            break;
+                        }
+                    default:
+                        throw new InvalidOperationException();
                 }
             }
 
@@ -246,5 +234,4 @@ namespace RegexRetrieval.Queries
             }
         }
     }
-
 }

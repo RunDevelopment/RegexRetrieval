@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace RegexRetrieval
 {
@@ -30,42 +29,28 @@ namespace RegexRetrieval
 
         private static int[][] CreateIndex(string[] words, int bitMask)
         {
-            var expectedLength = words.Length / (bitMask + 1);
-            expectedLength += expectedLength >> 1 + 1;
-            var lists = new List<int>[bitMask + 1].Set(i => new List<int>(expectedLength));
+            var index = new int[bitMask + 1][];
 
             for (int i = 0; i < words.Length; i++)
             {
-                int hash = Hash(words[i]);
-                lists[hash & bitMask].Add(i);
-            }
-
-            var index = new int[lists.Length][];
-            for (int i = 0; i < index.Length; i++)
-            {
-                ref var list = ref lists[i];
-                if (list.Count > 0)
-                    index[i] = list.ToArray();
-                list = null;
+                ref var item = ref index[Hash(words[i]) & bitMask];
+                if (item == null)
+                {
+                    item = new[] { i };
+                }
+                else
+                {
+                    var newArray = new int[item.Length + 1];
+                    Array.Copy(item, newArray, item.Length);
+                    newArray[newArray.Length - 1] = i;
+                    item = newArray;
+                }
             }
 
             return index;
         }
 
-        private static int Hash(string str)
-        {
-            int i = str.Length * 4093;
-            foreach (var c in str)
-            {
-                i += c;
-                i += i << 10;
-                i ^= i >> 6;
-            }
-            i ^= i << 3;
-            i ^= i >> 11;
-            i ^= i << 15;
-            return i;
-        }
+        private static int Hash(string str) => str.GetHashCode();
 
         public int GetIndex(string word)
         {
@@ -75,8 +60,7 @@ namespace RegexRetrieval
 
             foreach (var i in wordIndex)
             {
-                var iWord = words[i];
-                if (iWord.Equals(word, StringComparison.Ordinal))
+                if (word.Equals(words[i], StringComparison.Ordinal))
                     return i;
             }
             return -1;
