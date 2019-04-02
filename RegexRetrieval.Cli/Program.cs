@@ -176,6 +176,12 @@ Available retriever:
                     options.LTRPositionSubStringTrieOptions.MaxDepth = maxDepth;
                     options.RTLPositionSubStringTrieOptions.MaxDepth = maxDepth;
 
+                    options.UseWordIndex = true;
+                    options.UseLengthMatcher = true;
+                    options.UseLTRPositionSubStringTrie = true;
+                    options.UseRTLPositionSubStringTrie = true;
+                    options.UseSubStringTrie = true;
+
                     return new RegexRetriever(Words, options);
                 }),
             };
