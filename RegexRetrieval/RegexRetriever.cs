@@ -170,7 +170,22 @@ namespace RegexRetrieval
             var subStrTree = new SubStringTree();
             foreach (var range in subStringRanges)
             {
-                if (ltrPositionalTrie != null && range.LeftFixed)
+                // When both LTR and RTL are available and the range is fixed for both left and right, we have a choice
+                if (ltrPositionalTrie != null && rtlPositionalTrie != null &&
+                    range.LeftFixed && range.RightFixed)
+                {
+                    var ltrRange = ltrPositionalTrie.GetSelections(range.Left, range.Value);
+                    var rtlRange = rtlPositionalTrie.GetSelections(range.Right, range.Value.ToString().Reverse().ToSubString());
+
+                    // take the range with the smallest selection. (this is only an approximation)
+                    if (ltrRange.Min(r => r.Count) < rtlRange.Min(r => r.Count))
+                        selections.AddRange(ltrRange);
+                    else
+                        selections.AddRange(rtlRange);
+
+                    subStrTree.Add(range.Value);
+                }
+                else if (ltrPositionalTrie != null && range.LeftFixed)
                 {
                     // ltr
                     selections.AddRange(ltrPositionalTrie.GetSelections(range.Left, range.Value));
@@ -182,8 +197,6 @@ namespace RegexRetrieval
                     selections.AddRange(rtlPositionalTrie.GetSelections(range.Right, range.Value.ToString().Reverse().ToSubString()));
                     subStrTree.Add(range.Value);
                 }
-
-                // TODO: When both LTR and RTL are available and the range is fixed for both left and right, we have a choice
             }
             // simple sub strings
             // Note that this is the last resort. Substring tries have no chance to compete with positional tries.
@@ -298,22 +311,25 @@ namespace RegexRetrieval
             public bool UseLengthMatcher { get; set; } = true;
 
             public bool UseSubStringTrie { get; set; } = true;
-            public SubStringTrieMatcher.CreationOptions SubStringTrieOptions { get; set; } = null;
+            public SubStringTrieMatcher.CreationOptions SubStringTrieOptions { get; set; }
 
             public bool UseLTRPositionSubStringTrie { get; set; } = true;
-            public PositionalSubStringTrieMatcher.CreationOptions LTRPositionSubStringTrieOptions { get; set; } = null;
+            public PositionalSubStringTrieMatcher.CreationOptions LTRPositionSubStringTrieOptions { get; set; }
 
             public bool UseRTLPositionSubStringTrie { get; set; } = true;
-            public PositionalSubStringTrieMatcher.CreationOptions RTLPositionSubStringTrieOptions { get; set; } = null;
+            public PositionalSubStringTrieMatcher.CreationOptions RTLPositionSubStringTrieOptions { get; set; }
 
             public Action<string> Logger { get; set; } = Console.WriteLine;
 
             public CreationOptions() { }
             public CreationOptions(bool initializeWithDefaultOptions)
             {
-                SubStringTrieOptions = new SubStringTrieMatcher.CreationOptions();
-                LTRPositionSubStringTrieOptions = new PositionalSubStringTrieMatcher.CreationOptions();
-                RTLPositionSubStringTrieOptions = new PositionalSubStringTrieMatcher.CreationOptions();
+                if (initializeWithDefaultOptions)
+                {
+                    SubStringTrieOptions = new SubStringTrieMatcher.CreationOptions();
+                    LTRPositionSubStringTrieOptions = new PositionalSubStringTrieMatcher.CreationOptions();
+                    RTLPositionSubStringTrieOptions = new PositionalSubStringTrieMatcher.CreationOptions();
+                }
             }
         }
     }
