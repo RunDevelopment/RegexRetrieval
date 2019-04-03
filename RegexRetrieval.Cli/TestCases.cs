@@ -33,6 +33,11 @@
 
             // QMArk and star
             "te?t*",
+            "??*abc*",
+            "*abc??*",
+            "??*abc??*",
+            "??*abc??",
+            "??abc??*",
             null,
 
             // stars

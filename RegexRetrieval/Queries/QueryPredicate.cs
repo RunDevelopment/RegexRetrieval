@@ -75,7 +75,7 @@ namespace RegexRetrieval.Queries
             // regex is more efficient for constant word. (yeah, I know...)
             if (query.WordTokenCount == 1 && query.Tokens.Count == 1) return null;
 
-            // it really hard to detect and optimize for multiple words
+            // it really hard to detect and optimize for multiple words, so just let the regex handle it
             if (query.WordTokenCount > 1) return null;
 
             var tokens = query.Tokens;
@@ -97,24 +97,22 @@ namespace RegexRetrieval.Queries
                 return str => str.Length > min;
             }
 
-            // regex is faster than we can be when it comes to QMarks and words
+            // Known: Word == 1 && QMark + Star > 0
+
+            // regex is faster than we can be when it comes to QMarks and words (again: yeah, I know...)
             if (query.StarTokenCount == 0) return null;
 
-            // From here on, we have exactly one word token and at least one Star token
+            // Known: Word == 1 && QMark >= 0 && Star > 0
 
-            // no QMarks
-            if (query.QMarkTokenCount == 0 && query.StarTokenCount > 0)
+            // no QMarks && only one star
+            if (query.QMarkTokenCount == 0 && query.StarTokenCount == 1)
             {
-                // There are only 3 possible configurations
+                // Known: Word == 1 && QMark == 0 && Star == 1
 
-                // 1: *abc* == contains("abc")
-                if (tokens.Count == 3)
-                {
-                    var word = tokens[1].Value;
-                    return str => str.Contains(word, StringComparison.Ordinal);
-                }
+                // There are only 2 possible configurations
+
                 // 2: *abc == endsWith("abc")
-                else if (tokens[0].TokenType == QueryToken.Type.Star)
+                if (tokens[0].TokenType == QueryToken.Type.Star)
                 {
                     var word = tokens[1].Value;
                     return str => str.EndsWith(word, StringComparison.Ordinal);
@@ -127,9 +125,32 @@ namespace RegexRetrieval.Queries
                 }
             }
 
-            // From here on, we have exactly one word token, at least one Star token, and at least one QMark token
+            // Known: Word == 1 && QMark >= 0 && Star > 0
 
-            // TODO: Expand this to queries like ??*abc* , *abc??* , and ??*abc??*
+            var leadingQMarks = 0;
+            while (leadingQMarks < tokens.Count && tokens[leadingQMarks].TokenType == QueryToken.Type.QMark)
+                leadingQMarks++;
+            var trailingQMarks = query.QMarkTokenCount - leadingQMarks;
+            var leadingStar = tokens[leadingQMarks].TokenType == QueryToken.Type.Star;
+            var trailingStart = tokens[tokens.Count - 1].TokenType == QueryToken.Type.Star;
+
+            {
+                var word = tokens[leadingQMarks + (leadingStar ? 1 : 0)].Value;
+                var totalQMark = query.QMarkTokenCount;
+                var min = query.MinLength;
+
+                // ??*abc??*
+                if (leadingStar && trailingStart)
+                    return str => str.Length >= min && str.IndexOf(word, leadingQMarks, str.Length - totalQMark, StringComparison.Ordinal) >= 0;
+
+                // ??*abc??
+                if (leadingStar)
+                    return str => str.Length >= min && str.IndexOf(word, str.Length - word.Length - trailingQMarks, word.Length, StringComparison.Ordinal) >= 0;
+
+                // ??abc??*
+                if (trailingStart)
+                    return str => str.Length >= min && str.IndexOf(word, leadingQMarks, word.Length, StringComparison.Ordinal) >= 0;
+            }
 
             return null;
         }
