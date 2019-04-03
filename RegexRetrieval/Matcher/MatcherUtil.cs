@@ -13,7 +13,7 @@ namespace RegexRetrieval.Matcher
                 var l = lists[i];
                 if (l != null && l.Count > 0)
                 {
-                    node.AddSubNode((char) i, l.ToArray());
+                    node.AddSubNode((char) i, new Selection<int>(l.ToArray()));
                 }
             }
         }

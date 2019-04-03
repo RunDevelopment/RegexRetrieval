@@ -25,31 +25,30 @@ namespace RegexRetrieval.Matcher
 
         private static TrieNode CreateTree(string[] words, CreationOptions options)
         {
-            var rootNode = TrieNode.CreateRoot(words);
+            var rootNode = TrieNode.CreateRoot(new Selection<int>(Enumerable.Range(0, words.Length), words.Length));
 
             var listsPool = MatcherUtil.CreateListArrayPool(words.GetCharactersDistribution());
 
-            AddSubNodes(rootNode, options, listsPool);
+            AddSubNodes(words, rootNode, options, listsPool);
 
             listsPool.Clear();
 
             return rootNode;
         }
-        private static void AddSubNodes(TrieNode node, CreationOptions options, ObjectPool<List<int>[]> listsPool)
+        private static void AddSubNodes(string[] words, TrieNode node, CreationOptions options, ObjectPool<List<int>[]> listsPool)
         {
             if (node.Path.Length >= options.MaxDepth) return;
-            if (node.SelectionLength < options.MinSplit) return;
+            if (node.Selection.Count < options.MinSplit) return;
 
             var lists = listsPool.Lend();
             var charCounter = new int[0x10000].Set(i => -1);
 
-            string[] words = node.RootWords;
             string stack = node.Path;
 
             if (node.IsRoot)
             {
-                // optimization because we know that: node.Selection == null && stack == ""
-                for (int s = 0; s < node.SelectionLength; s++)
+                // optimization because we know that: node.Selection == ALL && stack == ""
+                for (int s = 0; s < words.Length; s++)
                 {
                     var word = words[s];
 
@@ -65,7 +64,7 @@ namespace RegexRetrieval.Matcher
             }
             else
             {
-                foreach (int s in node.Selection)
+                foreach (int s in node.Selection.Value)
                 {
                     var word = words[s];
                     if (word.Length <= stack.Length) continue;
@@ -95,17 +94,12 @@ namespace RegexRetrieval.Matcher
 
             if (node.IsRoot)
             {
-                node.SubNodes.AsParallel().ForAll(n =>
-                {
-                    AddSubNodes(n, options, listsPool);
-                });
+                node.SubNodes.AsParallel().ForAll(n => AddSubNodes(words, n, options, listsPool));
             }
             else
             {
                 foreach (var n in node.SubNodes)
-                {
-                    AddSubNodes(n, options, listsPool);
-                }
+                    AddSubNodes(words, n, options, listsPool);
             }
         }
 
@@ -169,7 +163,7 @@ namespace RegexRetrieval.Matcher
                     }
 
                     if (!processedSubStrings.Contains(node.Path) && // don't include substrings we already have
-                        (minNode == null || node.SelectionLength < minNode.SelectionLength))
+                        (minNode == null || node.Selection.Count < minNode.Selection.Count))
                     {
                         minNode = node;
                         minIndex = i;
@@ -184,7 +178,7 @@ namespace RegexRetrieval.Matcher
                 if (minNode == null) return; // the substring did not include any now substrings
 
                 // add the minimal selection to the other selections
-                selections.Add(new Selection<int>(minNode.Selection));
+                selections.Add(minNode.Selection);
                 processedSubStrings.Add(minNode.Path);
 
                 // and recursively get the selection of the remaining parts of the substring

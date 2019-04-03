@@ -28,18 +28,14 @@ namespace RegexRetrieval.Matcher
 
             var listsPool = MatcherUtil.CreateListArrayPool(words.GetCharactersDistribution());
 
-            var selection = new int[words.Length].Set(i => i);
+            var selection = new Selection<int>(Enumerable.Range(0, words.Length), words.Length);
             var rootNodes = new TrieNode[maxWordLength].SetParallel(i =>
             {
                 // create root
-                var r = TrieNode.CreateRoot(words, selection);
+                var r = TrieNode.CreateRoot(selection);
 
                 // add sub nodes
-                AddSubNodes(r, i, options, leftToRight, listsPool);
-
-                // to save memory
-                r.ForgetSelection();
-                r.ForgetWords();
+                AddSubNodes(words, r, i, options, leftToRight, listsPool);
 
                 return r;
             });
@@ -49,18 +45,17 @@ namespace RegexRetrieval.Matcher
             return rootNodes;
         }
 
-        private static void AddSubNodes(TrieNode node, int position, CreationOptions options, bool leftToRight, ObjectPool<List<int>[]> listsPool)
+        private static void AddSubNodes(string[] words, TrieNode node, int position, CreationOptions options, bool leftToRight, ObjectPool<List<int>[]> listsPool)
         {
             if (!node.IsRoot)
             {
                 if (node.Path.Length >= options.MaxDepth) return;
-                if (node.SelectionLength < options.MinSplit) return;
+                if (node.Selection.Count < options.MinSplit) return;
             }
 
             var lists = listsPool.Lend();
-            var words = node.RootWords;
 
-            foreach (int s in node.Selection)
+            foreach (int s in node.Selection.Value)
             {
                 var word = words[s];
                 if (position < word.Length)
@@ -71,7 +66,7 @@ namespace RegexRetrieval.Matcher
             listsPool.Return(lists);
 
             foreach (var n in node.SubNodes)
-                AddSubNodes(n, position + 1, options, leftToRight, listsPool);
+                AddSubNodes(words, n, position + 1, options, leftToRight, listsPool);
         }
 
         #endregion
@@ -150,9 +145,9 @@ namespace RegexRetrieval.Matcher
             }
 
             // sort by ascending selection size
-            nodes.Sort((a, b) => a.SelectionLength - b.SelectionLength);
+            nodes.Sort((a, b) => a.Selection.Count - b.Selection.Count);
 
-            return nodes.Select(n => new Selection<int>(n.Selection)).ToList();
+            return nodes.Select(n => n.Selection).ToList();
         }
 
         #endregion

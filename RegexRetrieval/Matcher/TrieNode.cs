@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RegexRetrieval.Matcher
 {
@@ -13,10 +12,6 @@ namespace RegexRetrieval.Matcher
         public readonly TrieNode Parent;
         private readonly Dictionary<char, TrieNode> subNodes = new Dictionary<char, TrieNode>();
 
-        private string[] words;
-        private int[] selection;
-        private readonly int selectionLength;
-
         #endregion
 
         #region properties
@@ -29,54 +24,30 @@ namespace RegexRetrieval.Matcher
         /// </summary>
         public int Depth => Path.Length;
 
-        public string[] RootWords => words;
-
-        public int[] Selection => selection;
-        public int SelectionLength => selectionLength;
+        public Selection<int> Selection { get; }
 
         #endregion
 
         #region constructors
 
-        private TrieNode(char c, TrieNode parent, int[] selection)
+        private TrieNode(char c, TrieNode parent, Selection<int> selection)
         {
             Character = c;
-            Path = parent.Path + c.ToString();
             Parent = parent;
-            words = parent.words;
-            this.selection = selection;
-            selectionLength = selection?.Length ?? 0;
-        }
-        private TrieNode(string[] words, int[] selection)
-        {
-            Character = '\0';
-            Path = "";
-            Parent = null;
-            this.words = words;
-            this.selection = selection;
-            selectionLength = selection?.Length ?? words?.Length ?? 0;
+            Selection = selection;
+            
+            Path = parent == null ? "" : parent.Path + c.ToString();
         }
 
         #endregion
 
-        public void AddSubNode(char c, int[] selection)
+        public void AddSubNode(char c, Selection<int> selection)
             => subNodes.Add(c, new TrieNode(c, this, selection));
         public bool TryGetSubNode(char c, out TrieNode node)
             => subNodes.TryGetValue(c, out node);
 
-        internal void ForgetWords()
-        {
-            words = null;
-            foreach (var n in subNodes.Values)
-                n.ForgetWords();
-        }
-        internal void ForgetSelection()
-        {
-            selection = null;
-        }
-
-        public static TrieNode CreateRoot(string[] words, int[] selection = null)
-            => new TrieNode(words, selection);
+        public static TrieNode CreateRoot(Selection<int> selection)
+            => new TrieNode('\0', null, selection);
 
         public static IEnumerable<TrieNode> FilterTransitive(IEnumerable<TrieNode> nodes, bool isSorted = false)
         {
