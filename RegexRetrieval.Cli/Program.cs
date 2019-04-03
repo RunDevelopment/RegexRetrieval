@@ -172,9 +172,9 @@ Available retriever:
                     var maxDepth = int.Parse(m.Groups[1].Value);
 
                     var options = new RegexRetriever.CreationOptions(true);
-                    options.SubStringTrieOptions.MaxDepth = maxDepth;
                     options.LTRPositionSubStringTrieOptions.MaxDepth = maxDepth;
                     options.RTLPositionSubStringTrieOptions.MaxDepth = maxDepth;
+                    options.SubStringTrieOptions.MaxDepth = maxDepth;
 
                     options.UseWordIndex = true;
                     options.UseLengthMatcher = true;
