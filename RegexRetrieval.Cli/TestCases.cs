@@ -54,6 +54,7 @@
             "*a*b*c",
             "a*b*c*",
             "*a*b*c*",
+            "*a*b*c*d*e*f*",
             null,
 
             // char sets

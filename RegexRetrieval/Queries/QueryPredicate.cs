@@ -6,12 +6,21 @@ namespace RegexRetrieval.Queries
 {
     public static class QueryPredicate
     {
-        internal static string ToRegexPattern(this Query query)
+        internal static string ToRegexPattern(this Query query, bool ltr = true)
         {
             var sb = new StringBuilder(64);
 
-            foreach (var token in query.Tokens)
+            bool IsCharsetOrOneLetterWord(in QueryToken token)
             {
+                return token.TokenType == QueryToken.Type.CharSet ||
+                    (token.TokenType == QueryToken.Type.Words && token.Value.Length == 1);
+            }
+
+            var tokens = query.Tokens;
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
                 switch (token.TokenType)
                 {
                     case QueryToken.Type.Words:
@@ -21,7 +30,22 @@ namespace RegexRetrieval.Queries
                         sb.Append(@"[\s\S]");
                         break;
                     case QueryToken.Type.Star:
-                        sb.Append(@"[\s\S]*");
+                        if (ltr && i + 2 < tokens.Count && tokens[i + 2].TokenType == QueryToken.Type.Star &&
+                            IsCharsetOrOneLetterWord(tokens[i + 1]))
+                        {
+                            // left to right: *b* or *[abc]*  ->  [^b]*b[\s\S]* or [^abc]*[\s\S]*
+                            sb.Append(@"[^").Append(Regex.Escape(tokens[i + 1].Value)).Append(@"]*");
+                        }
+                        else if (!ltr && i - 2 >= 0 && tokens[i - 2].TokenType == QueryToken.Type.Star &&
+                            IsCharsetOrOneLetterWord(tokens[i - 1]))
+                        {
+                            // right to left: *b* or *[abc]*  ->  [\s\S]*b[^b]* or [\s\S]*[abc][^abc]*
+                            sb.Append(@"[^").Append(Regex.Escape(tokens[i - 1].Value)).Append(@"]*");
+                        }
+                        else
+                        {
+                            sb.Append(@"[\s\S]*");
+                        }
                         break;
                     case QueryToken.Type.CharSet:
                         sb.Append('[').Append(Regex.Escape(token.Value)).Append(']');
@@ -60,7 +84,7 @@ namespace RegexRetrieval.Queries
 
             }
 
-            var r = new Regex("^(?:" + query.ToRegexPattern() + ")$", options);
+            var r = new Regex("^(?:" + query.ToRegexPattern(!options.HasFlag(RegexOptions.RightToLeft)) + ")$", options);
 
             var min = query.MinLength;
             var max = query.MaxLength;
