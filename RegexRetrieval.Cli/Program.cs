@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -38,6 +39,8 @@ namespace RegexRetrieval.Cli
 
         private static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+
             Load("D:\\Text\\words-en.txt");
 
             var commands = new CommandExecuter();
