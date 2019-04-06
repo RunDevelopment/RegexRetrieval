@@ -62,4 +62,4 @@
 |                 |              |         |         |         |         |              |                      |
 | `*C*`           |     0.001 ms | 645.61% |     500 |       0 |   1/inf |          inf |       EmptySelection |
 
-All measurements were taken on a Intel i7 8700K @ 3.7GHz with a maximum trie depth of 2.
+All measurements were taken on an Intel i7 8700K @ 3.7GHz with a maximum trie depth of 2.
